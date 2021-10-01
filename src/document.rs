@@ -16,20 +16,6 @@ impl Spot {
     pub fn new(x: usize, y: usize) -> Spot {
         return Spot { x, y };
     }
-
-    fn goto(self) -> Goto {
-        return Goto(
-            (self.x + 1) as u16,
-            (self.y + 1) as u16
-        );
-    }
-
-    fn next_line(self) -> Spot {
-        return Spot {
-            x: 0,
-            y: self.y + 1,
-        }
-    }
 }
 
 pub struct Edit {
@@ -63,9 +49,21 @@ impl Document {
     }
 
     pub fn display_edit(&self, screen: &mut Screen, edit: &Edit) -> Result<(), std::io::Error> {
+        let start_line = edit.range.0.y;
+        let end_line = {
+            let old_lines = edit.range.1.y - edit.range.0.y;
+            let new_lines = edit.text.chars().filter(|c| c == &'\n').count();
+
+            if old_lines == new_lines {
+                old_lines
+            } else {
+                self.source.lines().count()
+            }
+        };
+
         let changed_lines = self.source.lines().enumerate()
-            .skip(edit.range.0.y)
-            .take(edit.range.1.y - edit.range.0.y + 1);
+            .skip(start_line)
+            .take(end_line + 1);
 
         for (y, line) in changed_lines {
             self.display_line(screen, y, line)?;
@@ -97,14 +95,6 @@ fn resolve_spot_with_iter(spot: Spot, current_spot: &mut Spot, chars: &mut CharI
 }
 
 impl Document {
-    pub fn resolve_spot(&self, spot: Spot) -> Option<usize> {
-        return resolve_spot_with_iter(
-            spot,
-            &mut Spot { x: 0, y: 0 },
-            &mut self.source.char_indices(),
-        );
-    }
-
     pub fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::Range<usize>> {
         let chars = &mut self.source.char_indices();
         let current_spot = &mut Spot { x: 0, y: 0 };

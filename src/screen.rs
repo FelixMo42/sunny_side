@@ -1,4 +1,4 @@
-use termion::event::{Key, Event, MouseEvent};
+use termion::event::{Key, Event};
 use termion::input::{TermRead, MouseTerminal};
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::screen::AlternateScreen;
@@ -28,12 +28,19 @@ pub fn run(mut document: Document) -> Result<(), std::io::Error> {
 
     for event in stdin().events() {
         let action = match event? {
-            Event::Key(event) => Action::Edit(Edit {
+            Event::Key(Key::Esc) => Action::Quit,
+            Event::Key(Key::Backspace) => Action::Edit(Edit {
                 range: (Spot::new(1, 0), Spot::new(2, 0)),
-                text: "~".to_string()
+                text: "".to_string()
             }),
-            Event::Mouse(event) => Action::Quit,
-            Event::Unsupported(event) => Action::Quit,
+            Event::Key(Key::Char(c)) => Action::Edit(Edit {
+                range: (Spot::new(1, 0), Spot::new(1, 0)),
+                text: c.to_string()
+            }),
+
+            Event::Key(_) => Action::Noop,
+            Event::Mouse(_) => Action::Noop,
+            Event::Unsupported(_) => Action::Noop,
         };
 
         match action {
