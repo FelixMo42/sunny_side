@@ -5,55 +5,75 @@ use termion::screen::AlternateScreen;
 
 use std::io::{Write, Stdout, stdout, stdin};
 
-use crate::document::{Document, Edit, Spot};
+use crate::cursor::Cursor;
+use crate::document::{Document, Edit, Action};
 
 pub type Screen = MouseTerminal<AlternateScreen<RawTerminal<Stdout>>>;
 
-enum Action {
-    Quit,
-    Edit(Edit),
-    Noop,
+pub struct Ide {
+    screen: Screen,
+    cursor: Cursor,
 }
 
-pub fn run(mut document: Document) -> Result<(), std::io::Error> {
-    let screen = stdout().into_raw_mode()?;
-    let screen = AlternateScreen::from(screen);
-    let screen = MouseTerminal::from(screen);
-    let mut screen = screen;
-    let screen = &mut screen;
+impl Ide {
+    pub fn new() -> Result<Ide, std::io::Error> {
+        let screen = stdout().into_raw_mode()?;
+        let screen = AlternateScreen::from(screen);
+        let screen = MouseTerminal::from(screen);
 
-    write!(screen, "{}", termion::clear::All)?;
+        let cursor = Cursor::new();
 
-    document.display(screen)?;
-
-    for event in stdin().events() {
-        let action = match event? {
-            Event::Key(Key::Esc) => Action::Quit,
-            Event::Key(Key::Backspace) => Action::Edit(Edit {
-                range: (Spot::new(1, 0), Spot::new(2, 0)),
-                text: "".to_string()
-            }),
-            Event::Key(Key::Char(c)) => Action::Edit(Edit {
-                range: (Spot::new(1, 0), Spot::new(1, 0)),
-                text: c.to_string()
-            }),
-
-            Event::Key(_) => Action::Noop,
-            Event::Mouse(_) => Action::Noop,
-            Event::Unsupported(_) => Action::Noop,
-        };
-
-        match action {
-            Action::Quit => break,
-            Action::Noop => {}
-            Action::Edit(edit) => {
-                document.edit(&edit);
-                document.display_edit(screen, &edit)?;
-            }
-        }
+        return Ok(Ide {
+            screen,
+            cursor,
+        });
     }
 
-    screen.flush()?;
+    pub fn run(&mut self, mut document: Document) -> Result<(), std::io::Error> {
+        write!(self.screen, "{}{}",
+            termion::clear::All,
+            termion::cursor::SteadyBar,
+        )?;
+        document.display(&mut self.screen)?;
+        write!(self.screen, "{}", self.cursor.goto())?;
+        self.screen.flush()?;
 
-    return Ok(());
+        for event in stdin().events() {
+            let action = match event? {
+                Event::Key(Key::Esc) => Action::Quit,
+
+                Event::Key(Key::Backspace) => self.cursor.delete(&document),
+                Event::Key(Key::Char(chr)) => self.cursor.insert(chr),
+
+                Event::Key(Key::Up)    => self.cursor.up(&document),
+                Event::Key(Key::Down)  => self.cursor.down(&document),
+                Event::Key(Key::Left)  => self.cursor.left(&document),
+                Event::Key(Key::Right) => self.cursor.right(&document),
+
+                Event::Key(_) => Action::Noop,
+                Event::Mouse(_) => Action::Noop,
+                Event::Unsupported(_) => Action::Noop,
+            };
+
+            match action {
+                Action::Quit => break,
+                Action::Noop => {},
+                Action::Move => {
+                    write!(&mut self.screen, "{}", self.cursor.goto())?;
+                    self.screen.flush()?;
+                },
+                Action::Edit(edit) => {
+                    document.edit(&edit);
+
+                    document.display_edit(&mut self.screen, &edit)?;
+                    write!(&mut self.screen, "{}", self.cursor.goto())?;
+                    self.screen.flush()?;
+                }
+            }
+        }
+
+        self.screen.flush()?;
+
+        return Ok(());
+    }
 }

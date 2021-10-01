@@ -1,15 +1,14 @@
 mod screen;
+mod cursor;
 mod document;
 
 use crate::document::Document;
-use crate::screen::run;
+use crate::screen::Ide;
 
-fn main() {
+fn main() -> Result<(), std::io::Error> {
     let source = Document {
-        source: "let x = 4;\nlet y = x * 2;".to_string()
+        source: "let x = 123;\nthis.bla = 23;".to_string()
     };
 
-    if let Err(error) = run(source) {
-        println!("{}", error);
-    }
+    return Ide::new()?.run(source);
 }

@@ -16,11 +16,22 @@ impl Spot {
     pub fn new(x: usize, y: usize) -> Spot {
         return Spot { x, y };
     }
+
+    pub fn is_zero(&self) -> bool {
+        return self.x == 0 && self.y == 0;
+    }
 }
 
 pub struct Edit {
     pub text: String,
     pub range: (Spot, Spot),
+}
+
+pub enum Action {
+    Edit(Edit),
+    Move,
+    Noop,
+    Quit,
 }
 
 pub struct Document {
@@ -32,8 +43,6 @@ impl Document {
         for (y, line) in self.source.lines().enumerate() {
             self.display_line(screen, y, line)?;
         }
-
-        screen.flush()?;
 
         return Ok(());
     }
@@ -69,16 +78,16 @@ impl Document {
             self.display_line(screen, y, line)?;
         }
 
-        screen.flush()?;
-
         return Ok(());
     }
 }
 
 fn resolve_spot_with_iter(spot: Spot, current_spot: &mut Spot, chars: &mut CharIndices) -> Option<usize> {
-    for (i, chr) in chars {
-        let is_at_point = &spot == current_spot;
+    if spot.is_zero() {
+        return Some(0);
+    }
 
+    for (i, chr) in chars {
         if chr == '\n' {
             current_spot.x = 0;
             current_spot.y += 1;
@@ -86,8 +95,8 @@ fn resolve_spot_with_iter(spot: Spot, current_spot: &mut Spot, chars: &mut CharI
             current_spot.x += 1;
         }
 
-        if is_at_point {
-            return Some(i);
+        if &spot == current_spot {
+            return Some(i + 1);
         }
     }
 
@@ -95,6 +104,14 @@ fn resolve_spot_with_iter(spot: Spot, current_spot: &mut Spot, chars: &mut CharI
 }
 
 impl Document {
+    pub fn get_line_length(&self, y: usize) -> usize {
+        return self.source.lines().nth(y).unwrap().len();
+    }
+
+    pub fn line_count(&self) -> usize {
+        return self.source.lines().count();
+    }
+
     pub fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::Range<usize>> {
         let chars = &mut self.source.char_indices();
         let current_spot = &mut Spot { x: 0, y: 0 };
