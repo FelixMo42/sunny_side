@@ -62,6 +62,13 @@ impl Cursor {
 }
 
 impl Cursor {
+    pub fn goto(&mut self, document: &Document, x: usize, y: usize) -> Action {
+        self.spot.y = std::cmp::min(document.line_count() - 1, y);
+        self.spot.x = std::cmp::min(document.get_line_length(self.spot.y), x);
+
+        return Action::Move;
+    }
+
     pub fn up(&mut self, document: &Document) -> Action {
         if self.spot.y == 0 {
             return Action::Noop;
@@ -119,11 +126,11 @@ impl Cursor {
     }
 }
 
-impl Cursor {
-    pub fn goto(&self) -> Goto {
-        return Goto(
+impl std::fmt::Display for Cursor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return write!(f, "{}", Goto(
             (self.spot.x + 1) as u16,
             (self.spot.y + 1) as u16,
-        );
+        ));    
     }
 }

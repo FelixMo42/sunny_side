@@ -13,10 +13,6 @@ pub struct Spot {
 }
 
 impl Spot {
-    pub fn new(x: usize, y: usize) -> Spot {
-        return Spot { x, y };
-    }
-
     pub fn is_zero(&self) -> bool {
         return self.x == 0 && self.y == 0;
     }
