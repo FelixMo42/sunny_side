@@ -13,6 +13,10 @@ pub struct Spot {
 }
 
 impl Spot {
+    pub fn new(x: usize, y: usize) -> Spot {
+        return Spot { x, y };
+    }
+
     fn goto(self) -> Goto {
         return Goto(
             (self.x + 1) as u16,
@@ -29,8 +33,8 @@ impl Spot {
 }
 
 pub struct Edit {
-    text: String,
-    range: (Spot, Spot),
+    pub text: String,
+    pub range: (Spot, Spot),
 }
 
 pub struct Document {
@@ -52,7 +56,7 @@ impl Document {
         write!(screen, "{}{}{}",
             Goto(1, (y + 1) as u16),
             line,
-            clear::AfterCursor
+            clear::UntilNewline
         )?;
 
         return Ok(());
@@ -101,13 +105,17 @@ impl Document {
         );
     }
 
-    pub fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::RangeInclusive<usize>> {
+    pub fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::Range<usize>> {
         let chars = &mut self.source.char_indices();
         let current_spot = &mut Spot { x: 0, y: 0 };
 
         if let Some(a) = resolve_spot_with_iter(range.0, current_spot, chars) {
+            if range.0 == range.1 {
+                return Some(a..a);
+            }
+
             if let Some(b) = resolve_spot_with_iter(range.1, current_spot, chars) {
-                return Some(a..=b);
+                return Some(a..b);
             }
         }
 

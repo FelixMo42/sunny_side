@@ -5,7 +5,7 @@ use termion::screen::AlternateScreen;
 
 use std::io::{Write, Stdout, stdout, stdin};
 
-use crate::document::{Document, Edit};
+use crate::document::{Document, Edit, Spot};
 
 pub type Screen = MouseTerminal<AlternateScreen<RawTerminal<Stdout>>>;
 
@@ -28,7 +28,10 @@ pub fn run(mut document: Document) -> Result<(), std::io::Error> {
 
     for event in stdin().events() {
         let action = match event? {
-            Event::Key(event) => Action::Quit,
+            Event::Key(event) => Action::Edit(Edit {
+                range: (Spot::new(1, 0), Spot::new(2, 0)),
+                text: "~".to_string()
+            }),
             Event::Mouse(event) => Action::Quit,
             Event::Unsupported(event) => Action::Quit,
         };
