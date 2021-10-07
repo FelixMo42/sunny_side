@@ -108,8 +108,8 @@ impl Document {
     pub fn get_edit_lines(&mut self, edit: &Edit) -> (usize, usize) {
         let start_line = edit.range.0.y;
         
-        let number_of_lines_edited = edit.range.1.y - edit.range.0.y + 1;
-        let new_number_of_lines = edit.text.lines().count();
+        let number_of_lines_edited = edit.range.1.y - edit.range.0.y;
+        let new_number_of_lines = edit.text.matches('\n').count();
 
         let end_line = if number_of_lines_edited == new_number_of_lines {
             edit.range.1.y
