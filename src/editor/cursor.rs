@@ -1,10 +1,10 @@
-use termion::cursor::Goto;
+use std::cmp::min;
 
-use crate::document::{Action, Document, Edit, Spot};
+use crate::editor::document::{Document, Edit, Spot};
 
 pub struct Cursor {
     sticky_x: usize,
-    spot: Spot,
+    pub spot: Spot,
 }
 
 impl Cursor {
@@ -20,7 +20,7 @@ impl Cursor {
 }
 
 impl Cursor {
-    pub fn insert(&mut self, chr: char) -> Action {
+    pub fn insert(&mut self, _document: &Document, chr: char) -> Option<Edit> {
         let spot = self.spot;
 
         if chr == '\n' {
@@ -31,16 +31,16 @@ impl Cursor {
         }
 
         self.sticky_x = self.spot.x;
-
-        return Action::Edit(Edit {
+ 
+        return Some(Edit {
             range: (spot, spot),
             text: chr.to_string(),
         });
     }
 
-    pub fn delete(&mut self, document: &Document) -> Action {
+    pub fn delete(&mut self, document: &Document) -> Option<Edit> {
         if self.spot.is_zero() {
-            return Action::Noop
+            return None;
         }
 
         let spot = self.spot;
@@ -54,7 +54,7 @@ impl Cursor {
 
         self.sticky_x = self.spot.x;
 
-        return Action::Edit(Edit {
+        return Some(Edit {
             range: (self.spot, spot),
             text: "".to_string(),
         });
@@ -62,39 +62,37 @@ impl Cursor {
 }
 
 impl Cursor {
-    pub fn goto(&mut self, document: &Document, x: usize, y: usize) -> Action {
-        self.spot.y = std::cmp::min(document.line_count() - 1, y);
-        self.spot.x = std::cmp::min(document.get_line_length(self.spot.y), x);
+    pub fn goto(&mut self, document: &Document, spot: Spot) {
+        self.spot.y = min(document.line_count() - 1, spot.y);
+        self.spot.x = min(document.get_line_length(self.spot.y), spot.x);
 
-        return Action::Move;
+        self.sticky_x = self.spot.x;
     }
+}
 
-    pub fn up(&mut self, document: &Document) -> Action {
+impl Cursor {
+    pub fn up(&mut self, document: &Document) {
         if self.spot.y == 0 {
-            return Action::Noop;
+            return;
         }
 
         self.spot.y -= 1;
-        self.spot.x = std::cmp::min(self.sticky_x, document.get_line_length(self.spot.y));
-
-        return Action::Move;
+        self.spot.x = min(self.sticky_x, document.get_line_length(self.spot.y));
     }
 
-    pub fn down(&mut self, document: &Document) -> Action {
+    pub fn down(&mut self, document: &Document) {
         if self.spot.y == document.line_count() - 1 {
-            return Action::Noop;
+            return;
         }
 
         self.spot.y += 1;
-        self.spot.x = std::cmp::min(self.sticky_x, document.get_line_length(self.spot.y));
-
-        return Action::Move;
+        self.spot.x = min(self.sticky_x, document.get_line_length(self.spot.y));
     }
 
-    pub fn left(&mut self, document: &Document) -> Action {
+    pub fn left(&mut self, document: &Document) {
         if self.spot.x == 0 {
             if self.spot.y == 0 {
-                return Action::Noop;
+                return;
             }
 
             self.spot.y -= 1;
@@ -104,14 +102,12 @@ impl Cursor {
         }
 
         self.sticky_x = self.spot.x;
-
-        return Action::Move;
     }
 
-    pub fn right(&mut self, document: &Document) -> Action {
+    pub fn right(&mut self, document: &Document) {
         if self.spot.x == document.get_line_length(self.spot.y) {
             if self.spot.y == document.line_count() - 1 {
-                return Action::Noop;
+                return;
             }
 
             self.spot.x = 0;
@@ -121,16 +117,5 @@ impl Cursor {
         }
 
         self.sticky_x = self.spot.x;
-
-        return Action::Move;
-    }
-}
-
-impl std::fmt::Display for Cursor {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "{}", Goto(
-            (self.spot.x + 1) as u16,
-            (self.spot.y + 1) as u16,
-        ));    
     }
 }

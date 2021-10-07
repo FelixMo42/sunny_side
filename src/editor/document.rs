@@ -1,10 +1,9 @@
-use termion::cursor::Goto;
 use termion::clear;
 
 use std::io::Write;
 use std::str::CharIndices;
 
-use crate::screen::Screen;
+use crate::renderer::Screen;
 
 #[derive(Eq, PartialEq, Clone, Copy)]
 pub struct Spot {
@@ -18,16 +17,10 @@ impl Spot {
     }
 }
 
+#[derive(Eq, PartialEq)]
 pub struct Edit {
     pub text: String,
     pub range: (Spot, Spot),
-}
-
-pub enum Action {
-    Edit(Edit),
-    Move,
-    Noop,
-    Quit,
 }
 
 pub struct Document {
@@ -35,43 +28,30 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn display(&self, screen: &mut Screen) -> Result<(), std::io::Error>{
-        for (y, line) in self.source.lines().enumerate() {
-            self.display_line(screen, y, line)?;
-        }
-
-        return Ok(());
-    }
-
-    pub fn display_line(&self, screen: &mut Screen, y: usize, line: &str) -> Result<(), std::io::Error> {
-        write!(screen, "{}{}{}",
-            Goto(1, (y + 1) as u16),
-            line,
-            clear::UntilNewline
-        )?;
-
-        return Ok(());
-    }
-
-    pub fn display_edit(&self, screen: &mut Screen, edit: &Edit) -> Result<(), std::io::Error> {
-        let start_line = edit.range.0.y;
-        let end_line = {
-            let old_lines = edit.range.1.y - edit.range.0.y;
-            let new_lines = edit.text.chars().filter(|c| c == &'\n').count();
-
-            if old_lines == new_lines {
-                old_lines
-            } else {
-                self.source.lines().count()
-            }
+    pub fn new(source: String) -> Document {
+        return Document {
+            source
         };
+    }
+}
 
+impl Document {
+    pub fn edit(&mut self, edit: &Edit) {
+        if let Some(range) = self.resolve_range(edit.range) {
+            self.source.replace_range(range, edit.text.as_ref());
+        }
+    }
+
+    pub fn draw(&self, screen: &mut Screen, lines: (usize, usize)) -> Result<(), std::io::Error> {
         let changed_lines = self.source.lines().enumerate()
-            .skip(start_line)
-            .take(end_line + 1);
+            .skip(lines.0)
+            .take(lines.1 - lines.0 + 1);
 
         for (y, line) in changed_lines {
-            self.display_line(screen, y, line)?;
+            write!(screen.line(y), "{}{}",
+                line,
+                clear::UntilNewline
+            );
         }
 
         return Ok(());
@@ -108,7 +88,7 @@ impl Document {
         return self.source.lines().count();
     }
 
-    pub fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::Range<usize>> {
+    fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::Range<usize>> {
         let chars = &mut self.source.char_indices();
         let current_spot = &mut Spot { x: 0, y: 0 };
 
@@ -125,9 +105,18 @@ impl Document {
         return None;
     }
 
-    pub fn edit(&mut self, edit: &Edit) {
-        if let Some(range) = self.resolve_range(edit.range) {
-            self.source.replace_range(range, edit.text.as_ref());
-        }
+    pub fn get_edit_lines(&mut self, edit: &Edit) -> (usize, usize) {
+        let start_line = edit.range.0.y;
+        
+        let number_of_lines_edited = edit.range.1.y - edit.range.0.y + 1;
+        let new_number_of_lines = edit.text.lines().count();
+
+        let end_line = if number_of_lines_edited == new_number_of_lines {
+            edit.range.1.y
+        } else {
+            self.line_count()
+        };
+
+        return (start_line, end_line);
     }
 }
