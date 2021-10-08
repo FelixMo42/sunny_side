@@ -63,6 +63,8 @@ impl<T: Pain<Event>> Renderer<T> {
         let _stream = AlternateScreen::from(_stream);
         let _stream = MouseTerminal::from(_stream);
 
+        print!("{}", termion::cursor::SteadyBar);
+
         let size = terminal_size()?;
         let size = Spot {
             x: size.0 as usize,

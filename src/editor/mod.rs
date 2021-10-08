@@ -21,7 +21,7 @@ impl Editor {
     pub fn new(source: String) -> Editor {
         return Editor {
             document: Document::new(source),
-            offset: 1,
+            offset: 0,
             cursor: Cursor::new()
         }
     }
@@ -38,7 +38,8 @@ impl Editor {
                 return Ok(());
             }
 
-            edited_lines.0 = max(self.offset, edited_lines.0);
+            edited_lines.0 = max(edited_lines.0, self.offset);
+            edited_lines.1 = min(edited_lines.1, self.offset + screen.size.y);
 
             return self.document.draw(screen, edited_lines, self.offset);
         } else {
@@ -72,9 +73,10 @@ impl Pain<Event> for Editor {
             Event::Key(Key::Left)  => self.cursor.left(&self.document),
             Event::Key(Key::Right) => self.cursor.right(&self.document),
 
-            Event::Key(_) => {},
-
-            Event::Mouse(spot) => self.cursor.goto(&self.document, spot),
+            Event::Mouse(spot) => self.cursor.goto(&self.document, Spot {
+                x: spot.x - 6,
+                y: spot.y + self.offset
+            }),
 
             Event::Scroll(_, delta) => {
                 if delta < 0 {
@@ -93,16 +95,18 @@ impl Pain<Event> for Editor {
             }
             
             // Other
-            Event::Resize(size) => self.document.draw(
+            Event::Resize(_) => self.document.draw(
                 screen,
-                (self.offset, self.offset + size.x),
+                (self.offset, self.offset + screen.size.y),
                 self.offset
             )?,
+
+            _ => {}
         };
 
         if self.cursor.spot.y >= self.offset {
             return Ok(Spot {
-                x: self.cursor.spot.x,
+                x: self.cursor.spot.x + 6,
                 y: self.cursor.spot.y - self.offset,
             });
         } else {
@@ -111,10 +115,5 @@ impl Pain<Event> for Editor {
                 y: 0,
             });
         }
-
-        // return Ok(Spot {
-        //     x: 0,
-        //     y: 0
-        // });
     }
 }

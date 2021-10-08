@@ -43,13 +43,28 @@ impl Document {
     }
 
     pub fn draw(&self, screen: &mut Screen, lines: (usize, usize), offset: usize) -> std::io::Result<()> {
-        let changed_lines = self.source.lines().enumerate()
+        let changed_lines = self.source.lines()
+            .chain( std::iter::repeat("") )
+            .enumerate()
             .skip(lines.0)
             .take(lines.1 - lines.0 + 1);
 
+        let screen_width = screen.size.x - 6;
+
         for (y, line) in changed_lines {
-            write!(screen.line(y - offset)?, "{}{}",
-                line,
+            write!(screen.line(y - offset)?, "{} {}{}",
+                format!("{}{} {:>3} {}{}",
+                    termion::color::Bg(termion::color::Cyan),
+                    termion::color::Fg(termion::color::Black),
+                    y,
+                    termion::color::Bg(termion::color::Reset),
+                    termion::color::Fg(termion::color::Reset)
+                ),
+                if let Some(end) = line.char_indices().nth(screen_width) {
+                    &line[..end.0]
+                } else {
+                    &line[..]
+                },
                 clear::UntilNewline
             )?;
         }
