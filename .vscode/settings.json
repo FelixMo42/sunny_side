@@ -1,5 +1,9 @@
 {
     "editor.rulers": [
         100
-    ]
+    ],
+    "files.exclude": {
+        "target": true,
+        "Cargo.lock": true
+    }
 }
