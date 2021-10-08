@@ -42,23 +42,27 @@ impl Document {
         }
     }
 
-    pub fn draw(&self, screen: &mut Screen, lines: (usize, usize)) -> Result<(), std::io::Error> {
+    pub fn draw(&self, screen: &mut Screen, lines: (usize, usize), offset: usize) -> std::io::Result<()> {
         let changed_lines = self.source.lines().enumerate()
             .skip(lines.0)
             .take(lines.1 - lines.0 + 1);
 
         for (y, line) in changed_lines {
-            write!(screen.line(y), "{}{}",
+            write!(screen.line(y - offset)?, "{}{}",
                 line,
                 clear::UntilNewline
-            );
+            )?;
         }
 
         return Ok(());
     }
 }
 
-fn resolve_spot_with_iter(spot: Spot, current_spot: &mut Spot, chars: &mut CharIndices) -> Option<usize> {
+fn resolve_spot_with_iter(
+    spot: Spot,
+    current_spot: &mut Spot,
+    chars: &mut CharIndices
+) -> Option<usize> {
     if spot.is_zero() {
         return Some(0);
     }

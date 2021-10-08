@@ -5,22 +5,23 @@ use termion::raw::{IntoRawMode};
 use termion::cursor::Goto;
 use termion::screen::AlternateScreen;
 
-use std::io::{BufWriter, Write, stdout, stdin};
+use std::io::{BufWriter, Write, Result, Stdout, stdout, stdin};
 
 use crate::editor::document::Spot;
 use crate::event::Event;
 use crate::pain::Pain;
 
 pub struct Screen {
-    stream: BufWriter<std::io::Stdout>,
-    offset: usize,
+    stream: BufWriter<Stdout>,
+    pub offset: usize,
+    pub size: Spot,
 }
 
 impl Screen {
-    pub fn line(&mut self, y: usize) -> &mut BufWriter<std::io::Stdout> { 
+    pub fn line(&mut self, y: usize) -> Result<&mut BufWriter<Stdout>> { 
         let y = y + self.offset + 1;
-        write!(self.stream, "{}", Goto(1, y as u16));
-        return &mut self.stream;
+        write!(self.stream, "{}", Goto(1, y as u16))?;
+        return Ok(&mut self.stream);
     }
 }
 
@@ -37,20 +38,23 @@ impl<T: Pain<Event>> Renderer<T> {
 }
 
 impl<T: Pain<Event>> Renderer<T> {
-    fn screen(&self) -> Screen {
+    fn screen(&self, size: Spot) -> Screen {
         return Screen {
             stream: BufWriter::new(stdout()),
             offset: 0,
+            size,
         }
     }
 
-    fn update(&mut self, event: Event) -> std::io::Result<()> {
-        let screen = &mut self.screen();
+    fn update(&mut self, event: Event, size: Spot) -> std::io::Result<()> {
+        let screen = &mut self.screen(size);
         let cursor_position = self.root_pain.update(event, screen)?;
+
         write!(screen.stream, "{}", Goto(
             cursor_position.x as u16 + 1,
             cursor_position.y as u16 + 1,
-        ));
+        ))?;
+
         return screen.stream.flush();
     }
 
@@ -65,7 +69,7 @@ impl<T: Pain<Event>> Renderer<T> {
             y: size.1 as usize,
         };
 
-        self.update(Event::Resize(size))?;
+        self.update(Event::Resize(size), size)?;
 
         for event in stdin().events() {
             let event = event?;
@@ -75,7 +79,7 @@ impl<T: Pain<Event>> Renderer<T> {
                 break;
             }
 
-            self.update(event)?;
+            self.update(event, size)?;
         }
 
         return Ok(());

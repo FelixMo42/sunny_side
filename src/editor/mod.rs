@@ -1,6 +1,9 @@
 pub mod cursor;
 pub mod document;
 
+use std::cmp::{max, min};
+use std::io::Result;
+
 use crate::event::{Event, Key};
 
 use crate::renderer::Screen;
@@ -11,25 +14,33 @@ use crate::pain::Pain;
 pub struct Editor {
     pub document: Document,
     pub cursor: Cursor,
+    pub offset: usize
 }
 
 impl Editor {
     pub fn new(source: String) -> Editor {
         return Editor {
             document: Document::new(source),
+            offset: 1,
             cursor: Cursor::new()
         }
     }
 }
 
 impl Editor {
-    fn edit(&mut self, screen: &mut Screen, edit: Option<Edit>) -> std::io::Result<()> {
+    fn edit(&mut self, screen: &mut Screen, edit: Option<Edit>) -> Result<()> {
         if let Some(edit) = edit {
             self.document.edit(&edit);
 
-            let edited_lines = self.document.get_edit_lines(&edit);
+            let mut edited_lines = self.document.get_edit_lines(&edit);
 
-            return self.document.draw(screen, edited_lines);
+            if edited_lines.1 < self.offset {
+                return Ok(());
+            }
+
+            edited_lines.0 = max(self.offset, edited_lines.0);
+
+            return self.document.draw(screen, edited_lines, self.offset);
         } else {
             return Ok(());
         }
@@ -61,14 +72,49 @@ impl Pain<Event> for Editor {
             Event::Key(Key::Left)  => self.cursor.left(&self.document),
             Event::Key(Key::Right) => self.cursor.right(&self.document),
 
-            Event::Mouse(spot) => self.cursor.goto(&self.document, spot),
-            
-            // Resize
-            Event::Resize(size) => self.document.draw(screen, (0, size.x))?,
+            Event::Key(_) => {},
 
-            _ => {},
+            Event::Mouse(spot) => self.cursor.goto(&self.document, spot),
+
+            Event::Scroll(_, delta) => {
+                if delta < 0 {
+                    if self.offset > 0 {
+                        self.offset -= (-delta) as usize;
+                    }
+                } else {
+                    self.offset += delta as usize;
+                }
+
+                self.document.draw(
+                    screen,
+                    (self.offset, self.offset + screen.size.y),
+                    self.offset
+                )?
+            }
+            
+            // Other
+            Event::Resize(size) => self.document.draw(
+                screen,
+                (self.offset, self.offset + size.x),
+                self.offset
+            )?,
         };
 
-        return Ok(self.cursor.spot);
+        if self.cursor.spot.y >= self.offset {
+            return Ok(Spot {
+                x: self.cursor.spot.x,
+                y: self.cursor.spot.y - self.offset,
+            });
+        } else {
+            return Ok(Spot {
+                x: 0,
+                y: 0,
+            });
+        }
+
+        // return Ok(Spot {
+        //     x: 0,
+        //     y: 0
+        // });
     }
 }
