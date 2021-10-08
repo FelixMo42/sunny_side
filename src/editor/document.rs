@@ -1,6 +1,6 @@
 use termion::clear;
 
-use std::io::Write;
+use std::io::{Write, Result};
 use std::str::CharIndices;
 
 use crate::renderer::Screen;
@@ -42,7 +42,7 @@ impl Document {
         }
     }
 
-    pub fn draw(&self, screen: &mut Screen, lines: (usize, usize), offset: usize) -> std::io::Result<()> {
+    pub fn draw(&self, screen: &mut Screen, lines: (usize, usize), offset: usize) -> Result<()> {
         let changed_lines = self.source.lines()
             .chain( std::iter::repeat("") )
             .enumerate()
@@ -56,7 +56,7 @@ impl Document {
                 format!("{}{} {:>3} {}{}",
                     termion::color::Bg(termion::color::Cyan),
                     termion::color::Fg(termion::color::Black),
-                    y,
+                    y + 1,
                     termion::color::Bg(termion::color::Reset),
                     termion::color::Fg(termion::color::Reset)
                 ),
@@ -100,11 +100,15 @@ fn resolve_spot_with_iter(
 
 impl Document {
     pub fn get_line_length(&self, y: usize) -> usize {
-        return self.source.lines().nth(y).unwrap().len();
+        if let Some(line) = self.source.lines().nth(y) {
+            return line.len();
+        } else {
+            return 0
+        }
     }
 
     pub fn line_count(&self) -> usize {
-        return self.source.lines().count();
+        return self.source.matches('\n').count() + 1;
     }
 
     fn resolve_range(&self, range: (Spot, Spot)) -> Option<std::ops::Range<usize>> {

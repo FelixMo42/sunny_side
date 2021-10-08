@@ -11,8 +11,12 @@ use crate::renderer::Renderer;
 pub use crate::editor::document::Spot;
 
 fn main() -> Result<(), std::io::Error> {
-    // let source = read_to_string("./src/main.rs")?;
-    let source = read_to_string("./Cargo.lock")?;
+    let source = if let Some(path) = std::env::args().nth(1) {
+        read_to_string(path)?
+    } else {
+        "".to_string()
+    };
+
     let editor = Editor::new(source);
 
     return Renderer::new(editor).run();
