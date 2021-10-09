@@ -47,7 +47,7 @@ impl Document {
             .chain(std::iter::repeat(""))
             .enumerate()
             .skip(lines.0)
-            .take(lines.1 - lines.0 + 1);
+            .take(lines.1 - lines.0);
 
         let screen_width = screen.size.x - 6;
 
