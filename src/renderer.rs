@@ -1,15 +1,15 @@
+use crate::event::Event;
+use crate::pain::Pain;
+use crate::Spot;
+
+use std::io::{stdin, stdout, BufWriter, Result, Stdout, Write};
+
 use termion::cursor::Goto;
 use termion::event::Key;
 use termion::input::{MouseTerminal, TermRead};
 use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
 use termion::terminal_size;
-
-use std::io::{stdin, stdout, BufWriter, Result, Stdout, Write};
-
-use crate::editor::document::Spot;
-use crate::event::Event;
-use crate::pain::Pain;
 
 pub struct Screen {
     stream: BufWriter<Stdout>,

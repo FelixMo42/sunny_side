@@ -1,21 +1,10 @@
-use termion::clear;
+use crate::renderer::Screen;
+use crate::Spot;
 
 use std::io::{Result, Write};
 use std::str::CharIndices;
 
-use crate::renderer::Screen;
-
-#[derive(Eq, PartialEq, Clone, Copy)]
-pub struct Spot {
-    pub x: usize,
-    pub y: usize,
-}
-
-impl Spot {
-    pub fn is_zero(&self) -> bool {
-        return self.x == 0 && self.y == 0;
-    }
-}
+use termion::clear;
 
 #[derive(Eq, PartialEq)]
 pub struct Edit {

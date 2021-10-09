@@ -1,15 +1,15 @@
 pub mod cursor;
 pub mod document;
 
-use std::cmp::{max, min};
-use std::io::Result;
-
-use crate::event::{Event, Key};
-
 use crate::editor::cursor::Cursor;
-use crate::editor::document::{Document, Edit, Spot};
+use crate::editor::document::{Document, Edit};
+use crate::event::{Event, Key};
 use crate::pain::Pain;
 use crate::renderer::Screen;
+use crate::Spot;
+
+use std::cmp::{max, min};
+use std::io::Result;
 
 pub struct Editor {
     pub document: Document,
