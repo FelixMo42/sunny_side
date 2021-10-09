@@ -3,13 +3,16 @@ use logos::{Lexer, Logos};
 pub const BLUE: &str = "\x1b[36m";
 pub const GREEN: &str = "\x1b[32m";
 pub const PURPLE: &str = "\x1b[38;2;208;202;140m";
-// pub const GRAY: &str = "\x1b[38;2;168;153;132m";
 pub const PINK: &str = "\x1b[38;2;0;200;200m";
+pub const BLA: &str = "\x1b[38;2;128;128;0m";
 
 pub const RESET: &str = "\x1b[0m";
 
 #[derive(Logos, Debug, PartialEq)]
 enum Token {
+    #[regex("\".*\"")]
+    String,
+
     #[token("mod")]
     #[token("use")]
     #[token("pub")]
@@ -25,15 +28,15 @@ enum Token {
     #[token("impl")]
     KeyWord,
 
-    #[regex("[A-Z][a-zA-Z0-9_]*")]
+    #[regex(r"[A-Z][a-zA-Z0-9_]*")]
     #[token("usize")]
     #[token("bool")]
     Type,
 
-    #[regex("[a-z][a-zA-Z0-9_]*[.:]")]
+    #[regex(r"[a-z][a-zA-Z0-9_]*[.:]")]
     Path,
 
-    #[regex("[a-z][a-zA-Z0-9_]*")]
+    #[regex(r"[a-z][a-zA-Z0-9_]*")]
     Variable,
 
     #[regex(r"[-]?[0-9]+[.]?[0-9]?")]
@@ -52,7 +55,6 @@ pub struct Synax<'a> {
 
 impl<'a> Synax<'a> {
     pub fn new(text: &'a str) -> Self {
-        let a = Token::lexer(text);
         return Synax {
             tokens: Token::lexer(text),
         };
@@ -66,6 +68,7 @@ impl<'a> Iterator for Synax<'a> {
         if let Some(token) = self.tokens.next() {
             let style = match token {
                 Token::Path => RESET,
+                Token::String => BLA,
                 Token::Variable => PURPLE,
                 Token::KeyWord => GREEN,
                 Token::Number => BLUE,
