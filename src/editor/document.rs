@@ -1,6 +1,6 @@
 use termion::clear;
 
-use std::io::{Write, Result};
+use std::io::{Result, Write};
 use std::str::CharIndices;
 
 use crate::renderer::Screen;
@@ -29,9 +29,7 @@ pub struct Document {
 
 impl Document {
     pub fn new(source: String) -> Document {
-        return Document {
-            source
-        };
+        return Document { source };
     }
 }
 
@@ -43,8 +41,10 @@ impl Document {
     }
 
     pub fn draw(&self, screen: &mut Screen, lines: (usize, usize), offset: usize) -> Result<()> {
-        let changed_lines = self.source.lines()
-            .chain( std::iter::repeat("") )
+        let changed_lines = self
+            .source
+            .lines()
+            .chain(std::iter::repeat(""))
             .enumerate()
             .skip(lines.0)
             .take(lines.1 - lines.0 + 1);
@@ -52,8 +52,11 @@ impl Document {
         let screen_width = screen.size.x - 6;
 
         for (y, line) in changed_lines {
-            write!(screen.line(y - offset)?, "{} {}{}",
-                format!("{}{} {:>3} {}{}",
+            write!(
+                screen.line(y - offset)?,
+                "{} {}{}",
+                format!(
+                    "{}{} {:>3} {}{}",
                     termion::color::Bg(termion::color::Cyan),
                     termion::color::Fg(termion::color::Black),
                     y + 1,
@@ -76,7 +79,7 @@ impl Document {
 fn resolve_spot_with_iter(
     spot: Spot,
     current_spot: &mut Spot,
-    chars: &mut CharIndices
+    chars: &mut CharIndices,
 ) -> Option<usize> {
     if spot.is_zero() {
         return Some(0);
@@ -103,7 +106,7 @@ impl Document {
         if let Some(line) = self.source.lines().nth(y) {
             return line.len();
         } else {
-            return 0
+            return 0;
         }
     }
 
@@ -130,7 +133,6 @@ impl Document {
 
     pub fn get_edit_lines(&mut self, edit: &Edit) -> (usize, usize) {
         let start_line = edit.range.0.y;
-        
         let number_of_lines_edited = edit.range.1.y - edit.range.0.y;
         let new_number_of_lines = edit.text.matches('\n').count();
 

@@ -6,15 +6,15 @@ use std::io::Result;
 
 use crate::event::{Event, Key};
 
-use crate::renderer::Screen;
 use crate::editor::cursor::Cursor;
 use crate::editor::document::{Document, Edit, Spot};
 use crate::pain::Pain;
+use crate::renderer::Screen;
 
 pub struct Editor {
     pub document: Document,
     pub cursor: Cursor,
-    pub offset: usize
+    pub offset: usize,
 }
 
 impl Editor {
@@ -22,8 +22,8 @@ impl Editor {
         return Editor {
             document: Document::new(source),
             offset: 0,
-            cursor: Cursor::new()
-        }
+            cursor: Cursor::new(),
+        };
     }
 }
 
@@ -68,15 +68,18 @@ impl Pain<Event> for Editor {
             Event::Key(Key::Char(chr)) => self.insert(screen, chr)?,
 
             // Cursor movement
-            Event::Key(Key::Up)    => self.cursor.up(&self.document),
-            Event::Key(Key::Down)  => self.cursor.down(&self.document),
-            Event::Key(Key::Left)  => self.cursor.left(&self.document),
+            Event::Key(Key::Up) => self.cursor.up(&self.document),
+            Event::Key(Key::Down) => self.cursor.down(&self.document),
+            Event::Key(Key::Left) => self.cursor.left(&self.document),
             Event::Key(Key::Right) => self.cursor.right(&self.document),
 
-            Event::Mouse(spot) => self.cursor.goto(&self.document, Spot {
-                x: spot.x - 6,
-                y: spot.y + self.offset
-            }),
+            Event::Mouse(spot) => self.cursor.goto(
+                &self.document,
+                Spot {
+                    x: spot.x - 6,
+                    y: spot.y + self.offset,
+                },
+            ),
 
             Event::Scroll(_, delta) => {
                 if delta < 0 {
@@ -90,15 +93,14 @@ impl Pain<Event> for Editor {
                 self.document.draw(
                     screen,
                     (self.offset, self.offset + screen.size.y),
-                    self.offset
+                    self.offset,
                 )?
             }
-            
             // Other
             Event::Resize(_) => self.document.draw(
                 screen,
                 (self.offset, self.offset + screen.size.y),
-                self.offset
+                self.offset,
             )?,
 
             _ => {}
@@ -110,10 +112,7 @@ impl Pain<Event> for Editor {
                 y: self.cursor.spot.y - self.offset,
             });
         } else {
-            return Ok(Spot {
-                x: 0,
-                y: 0,
-            });
+            return Ok(Spot { x: 0, y: 0 });
         }
     }
 }

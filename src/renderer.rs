@@ -1,11 +1,11 @@
-use termion::event::Key;
-use termion::terminal_size;
-use termion::input::{TermRead, MouseTerminal};
-use termion::raw::{IntoRawMode};
 use termion::cursor::Goto;
+use termion::event::Key;
+use termion::input::{MouseTerminal, TermRead};
+use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
+use termion::terminal_size;
 
-use std::io::{BufWriter, Write, Result, Stdout, stdout, stdin};
+use std::io::{stdin, stdout, BufWriter, Result, Stdout, Write};
 
 use crate::editor::document::Spot;
 use crate::event::Event;
@@ -18,7 +18,7 @@ pub struct Screen {
 }
 
 impl Screen {
-    pub fn line(&mut self, y: usize) -> Result<&mut BufWriter<Stdout>> { 
+    pub fn line(&mut self, y: usize) -> Result<&mut BufWriter<Stdout>> {
         let y = y + self.offset + 1;
         write!(self.stream, "{}", Goto(1, y as u16))?;
         return Ok(&mut self.stream);
@@ -31,9 +31,7 @@ pub struct Renderer<T: Pain<Event>> {
 
 impl<T: Pain<Event>> Renderer<T> {
     pub fn new(root_pain: T) -> Renderer<T> {
-        return Renderer {
-            root_pain,
-        };
+        return Renderer { root_pain };
     }
 }
 
@@ -43,17 +41,18 @@ impl<T: Pain<Event>> Renderer<T> {
             stream: BufWriter::new(stdout()),
             offset: 0,
             size,
-        }
+        };
     }
 
     fn update(&mut self, event: Event, size: Spot) -> std::io::Result<()> {
         let screen = &mut self.screen(size);
         let cursor_position = self.root_pain.update(event, screen)?;
 
-        write!(screen.stream, "{}", Goto(
-            cursor_position.x as u16 + 1,
-            cursor_position.y as u16 + 1,
-        ))?;
+        write!(
+            screen.stream,
+            "{}",
+            Goto(cursor_position.x as u16 + 1, cursor_position.y as u16 + 1,)
+        )?;
 
         return screen.stream.flush();
     }

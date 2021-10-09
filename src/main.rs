@@ -1,7 +1,7 @@
-mod renderer;
 mod editor;
 mod event;
 mod pain;
+mod renderer;
 
 use std::fs::read_to_string;
 

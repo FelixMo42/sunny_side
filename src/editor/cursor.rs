@@ -11,11 +11,8 @@ impl Cursor {
     pub fn new() -> Cursor {
         return Cursor {
             sticky_x: 0,
-            spot: Spot {
-                x: 0,
-                y: 0,
-            },
-        }
+            spot: Spot { x: 0, y: 0 },
+        };
     }
 }
 
@@ -31,7 +28,6 @@ impl Cursor {
         }
 
         self.sticky_x = self.spot.x;
- 
         return Some(Edit {
             range: (spot, spot),
             text: chr.to_string(),

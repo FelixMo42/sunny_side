@@ -1,4 +1,4 @@
-pub use termion::event::{Key, MouseEvent, MouseButton};
+pub use termion::event::{Key, MouseButton, MouseEvent};
 
 use crate::editor::document::Spot;
 
@@ -14,7 +14,7 @@ fn to_zero_based(x: u16, y: u16) -> Spot {
     return Spot {
         x: x as usize - 1,
         y: y as usize - 1,
-    }
+    };
 }
 
 impl From<termion::event::Event> for Event {
@@ -29,10 +29,10 @@ impl From<termion::event::Event> for Event {
                     MouseButton::WheelUp => Event::Scroll(to_zero_based(x, y), 1),
                     MouseButton::WheelDown => Event::Scroll(to_zero_based(x, y), -1),
                     _ => Event::Mouse(to_zero_based(x, y)),
-                }
+                },
             },
 
-            termion::event::Event::Unsupported(_) => Event::Key(Key::Esc)
+            termion::event::Event::Unsupported(_) => Event::Key(Key::Esc),
         }
     }
 }
