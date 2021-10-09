@@ -36,7 +36,7 @@ impl Document {
             .lines()
             .chain(std::iter::repeat(""))
             .skip(lines.0)
-            .take(lines.1 - lines.0 + 1)
+            .take(lines.1 - lines.0)
             .map(|line| Synax::new(line));
 
         let buffer = screen.line(lines.0 - offset)?;
