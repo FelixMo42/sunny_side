@@ -1,5 +1,6 @@
 pub mod cursor;
 pub mod document;
+pub mod syntax;
 
 use crate::editor::cursor::Cursor;
 use crate::editor::document::{Document, Edit};
@@ -76,7 +77,7 @@ impl Pain<Event> for Editor {
             Event::Mouse(spot) => self.cursor.goto(
                 &self.document,
                 Spot {
-                    x: spot.x - 6,
+                    x: spot.x,
                     y: spot.y + self.offset,
                 },
             ),
@@ -108,7 +109,7 @@ impl Pain<Event> for Editor {
 
         if self.cursor.spot.y >= self.offset {
             return Ok(Spot {
-                x: self.cursor.spot.x + 6,
+                x: self.cursor.spot.x,
                 y: self.cursor.spot.y - self.offset,
             });
         } else {
