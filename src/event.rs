@@ -1,6 +1,6 @@
 pub use termion::event::{Key, MouseButton, MouseEvent};
 
-use crate::editor::document::Spot;
+use crate::Spot;
 
 #[derive(Eq, PartialEq)]
 pub enum Event {
