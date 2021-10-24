@@ -1,6 +1,7 @@
-use std::cmp::min;
+use crate::editor::document::{Document, Edit};
+use crate::Spot;
 
-use crate::editor::document::{Document, Edit, Spot};
+use std::cmp::min;
 
 pub struct Cursor {
     sticky_x: usize,

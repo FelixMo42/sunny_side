@@ -1,21 +1,11 @@
-use termion::clear;
+use crate::editor::syntax::Synax;
+use crate::renderer::Screen;
+use crate::Spot;
 
 use std::io::{Result, Write};
 use std::str::CharIndices;
 
-use crate::renderer::Screen;
-
-#[derive(Eq, PartialEq, Clone, Copy)]
-pub struct Spot {
-    pub x: usize,
-    pub y: usize,
-}
-
-impl Spot {
-    pub fn is_zero(&self) -> bool {
-        return self.x == 0 && self.y == 0;
-    }
-}
+use termion::clear;
 
 #[derive(Eq, PartialEq)]
 pub struct Edit {
@@ -45,31 +35,20 @@ impl Document {
             .source
             .lines()
             .chain(std::iter::repeat(""))
-            .enumerate()
             .skip(lines.0)
-            .take(lines.1 - lines.0);
+            .take(lines.1 - lines.0)
+            .map(|line| Synax::new(line));
 
-        let screen_width = screen.size.x - 6;
+        let buffer = screen.line(lines.0 - offset)?;
 
-        for (y, line) in changed_lines {
-            write!(
-                screen.line(y - offset)?,
-                "{} {}{}",
-                format!(
-                    "{}{} {:>3} {}{}",
-                    termion::color::Bg(termion::color::Cyan),
-                    termion::color::Fg(termion::color::Black),
-                    y + 1,
-                    termion::color::Bg(termion::color::Reset),
-                    termion::color::Fg(termion::color::Reset)
-                ),
-                if let Some(end) = line.char_indices().nth(screen_width) {
-                    &line[..end.0]
-                } else {
-                    &line[..]
-                },
-                clear::UntilNewline
-            )?;
+        const NEXT_LINE: &str = "\x1b[1E";
+
+        for line in changed_lines {
+            for (style, token) in line {
+                write!(buffer, "{}{}", style, token)?;
+            }
+
+            write!(buffer, "{}{}", clear::UntilNewline, NEXT_LINE)?;
         }
 
         return Ok(());
