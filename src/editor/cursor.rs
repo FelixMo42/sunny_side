@@ -1,4 +1,4 @@
-use crate::editor::document::{Document, Edit};
+use crate::editor::{event::Cursor as Action, Document, Edit};
 use crate::Spot;
 
 use std::cmp::min;
@@ -18,7 +18,19 @@ impl Cursor {
 }
 
 impl Cursor {
-    pub fn insert(&mut self, _document: &Document, chr: char) -> Option<Edit> {
+    pub fn update(&mut self, action: Action, document: &mut Document) {
+        match action {
+            Action::Prev(_) => {}
+            Action::Next(_) => {}
+
+            Action::Insert(insertion) => {}
+            Action::Delete(_) => {}
+        }
+    }
+}
+
+impl Cursor {
+    pub fn insert(&mut self, document: &mut Document, chr: char) -> Option<Edit> {
         let spot = self.spot;
 
         if chr == '\n' {
@@ -35,7 +47,7 @@ impl Cursor {
         });
     }
 
-    pub fn delete(&mut self, document: &Document) -> Option<Edit> {
+    pub fn delete(&mut self, document: &mut Document) -> Option<Edit> {
         if self.spot.is_zero() {
             return None;
         }

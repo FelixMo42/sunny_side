@@ -3,6 +3,8 @@ mod event;
 mod pain;
 mod renderer;
 
+mod cursorEvent;
+
 use crate::editor::Editor;
 use crate::renderer::Renderer;
 

@@ -1,10 +1,12 @@
 pub mod cursor;
 pub mod document;
+pub mod event;
 pub mod syntax;
 
-use crate::editor::cursor::Cursor;
-use crate::editor::document::{Document, Edit};
-use crate::event::{Event, Key};
+pub use self::cursor::Cursor;
+pub use self::document::{Document, Edit};
+pub use self::event::Editor as Action;
+
 use crate::pain::Pain;
 use crate::renderer::Screen;
 use crate::Spot;
@@ -28,83 +30,68 @@ impl Editor {
     }
 }
 
-impl Editor {
-    fn edit(&mut self, screen: &mut Screen, edit: Option<Edit>) -> Result<()> {
-        if let Some(edit) = edit {
-            self.document.edit(&edit);
-
-            let mut edited_lines = self.document.get_edit_lines(&edit);
-
-            if edited_lines.1 < self.offset {
-                return Ok(());
-            }
-
-            edited_lines.0 = max(edited_lines.0, self.offset);
-            edited_lines.1 = min(edited_lines.1, self.offset + screen.size.y);
-
-            return self.document.draw(screen, edited_lines, self.offset);
-        } else {
-            return Ok(());
-        }
-    }
-
-    #[inline]
-    fn delete(&mut self, screen: &mut Screen) -> std::io::Result<()> {
-        let edit = self.cursor.delete(&self.document);
-        return self.edit(screen, edit);
-    }
-
-    #[inline]
-    fn insert(&mut self, screen: &mut Screen, chr: char) -> std::io::Result<()> {
-        let edit = self.cursor.insert(&self.document, chr);
-        return self.edit(screen, edit);
-    }
-}
-
-impl Pain<Event> for Editor {
-    fn update(&mut self, event: Event, screen: &mut Screen) -> std::io::Result<Spot> {
-        match event {
-            // Editing
-            Event::Key(Key::Backspace) => self.delete(screen)?,
-            Event::Key(Key::Char(chr)) => self.insert(screen, chr)?,
-
-            // Cursor movement
-            Event::Key(Key::Up) => self.cursor.up(&self.document),
-            Event::Key(Key::Down) => self.cursor.down(&self.document),
-            Event::Key(Key::Left) => self.cursor.left(&self.document),
-            Event::Key(Key::Right) => self.cursor.right(&self.document),
-
-            Event::Mouse(spot) => self.cursor.goto(
-                &self.document,
-                Spot {
-                    x: spot.x,
-                    y: spot.y + self.offset,
-                },
-            ),
-
-            Event::Scroll(_, delta) => {
-                if delta < 0 {
-                    if self.offset > 0 {
-                        self.offset -= (-delta) as usize;
-                    }
-                } else {
-                    self.offset += delta as usize;
-                }
-
-                self.document.draw(
-                    screen,
-                    (self.offset, self.offset + screen.size.y),
-                    self.offset,
-                )?
-            }
-            // Other
-            Event::Resize(_) => self.document.draw(
+impl Pain<Action> for Editor {
+    fn update(&mut self, screen: &mut Screen, action: Action) -> Result<Spot> {
+        match action {
+            Action::Document(edit) => self.document.edit(&edit),
+            Action::Cursor(event) => self.cursor.update(event, &mut self.document),
+            Action::Resize(size) => self.document.draw(
                 screen,
                 (self.offset, self.offset + screen.size.y),
                 self.offset,
             )?,
 
-            _ => {}
+            _ => {} //     let mut edited_lines = self.document.get_edit_lines(&edit);
+
+                    //     if edited_lines.1 > self.offset {
+                    //         edited_lines.0 = max(edited_lines.0, self.offset);
+                    //         edited_lines.1 = min(edited_lines.1, self.offset + screen.size.y);
+
+                    //         self.document.draw(screen, edited_lines, self.offset)?;
+                    //     }
+                    // }
+
+                    // // Editing
+                    // Event::Key(Key::Backspace) => self.delete(screen)?,
+                    // Event::Key(Key::Char(chr)) => self.insert(screen, chr)?,
+
+                    // // Cursor movement
+                    // Event::Key(Key::Up) => self.cursor.up(&self.document),
+                    // Event::Key(Key::Down) => self.cursor.down(&self.document),
+                    // Event::Key(Key::Left) => self.cursor.left(&self.document),
+                    // Event::Key(Key::Right) => self.cursor.right(&self.document),
+
+                    // Event::Mouse(spot) => self.cursor.goto(
+                    //     &self.document,
+                    //     Spot {
+                    //         x: spot.x,
+                    //         y: spot.y + self.offset,
+                    //     },
+                    // ),
+
+                    // Event::Scroll(_, delta) => {
+                    //     if delta < 0 {
+                    //         if self.offset > 0 {
+                    //             self.offset -= (-delta) as usize;
+                    //         }
+                    //     } else {
+                    //         self.offset += delta as usize;
+                    //     }
+
+                    //     self.document.draw(
+                    //         screen,
+                    //         (self.offset, self.offset + screen.size.y),
+                    //         self.offset,
+                    //     )?
+                    // }
+                    // // Other
+                    // Event::Resize(_) => self.document.draw(
+                    //     screen,
+                    //     (self.offset, self.offset + screen.size.y),
+                    //     self.offset,
+                    // )?,
+
+                    // _ => {}
         };
 
         if self.cursor.spot.y >= self.offset {
