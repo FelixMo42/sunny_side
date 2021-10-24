@@ -137,7 +137,7 @@ impl Document {
         let new_number_of_lines = edit.text.matches('\n').count();
 
         let end_line = if number_of_lines_edited == new_number_of_lines {
-            edit.range.1.y
+            edit.range.1.y + 1
         } else {
             self.line_count()
         };
